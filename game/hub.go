@@ -212,6 +212,11 @@ func (h *Hub) handleMessage(id string, c *client, identity Identity, data []byte
 		}
 	case msgRespawn:
 		h.respawn(id)
+	case msgCrash:
+		var msg crashMsg
+		if json.Unmarshal(data, &msg) == nil {
+			h.crash(id, msg)
+		}
 	}
 }
 
@@ -355,6 +360,36 @@ func (h *Hub) hit(id string, msg hitMsg) {
 		shooter.kills++
 	}
 	h.broadcastLocked(diedMsg{Type: msgDied, Target: target.id, From: id}, "")
+}
+
+// crash destroys two ships that ran into each other, as the one reporting it
+// saw it, if the server's own record of them agrees they were that close.
+// Nobody gets a kill for it.
+func (h *Hub) crash(id string, msg crashMsg) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	p, ok := h.players[id]
+	other, otherOk := h.players[msg.With]
+	if !ok || !otherOk || p == other || p.dead || other.dead {
+		return
+	}
+	if !shipsTouch(p.pos, other.pos, h.settings.ShipRadius) {
+		return
+	}
+	for _, ship := range []*Player{p, other} {
+		ship.life = 0
+		ship.dead = true
+		ship.diedAt = h.now()
+		ship.deaths++
+		h.broadcastLocked(diedMsg{Type: msgDied, Target: ship.id}, "")
+	}
+}
+
+// shipsTouch reports whether two ships, as the server last heard of them,
+// may have collided: their hit spheres overlap, give or take how far
+// positions can be behind (see hitTolerance).
+func shipsTouch(a, b vec3, radius float64) bool {
+	return length(sub(a, b)) <= 2*radius+hitTolerance
 }
 
 func (h *Hub) respawn(id string) {

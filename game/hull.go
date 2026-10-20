@@ -113,6 +113,26 @@ func (b hullBox) segmentHits(a, end vec3, tolerance float64) bool {
 	return true
 }
 
+// distance is how far a point is from the box (0 inside it).
+func (b hullBox) distance(p vec3) float64 {
+	local := b.toLocal(p)
+	outside := vec3{}
+	for axis := 0; axis < 3; axis++ {
+		outside[axis] = math.Max(0, math.Abs(local[axis])-b.half[axis])
+	}
+	return length(outside)
+}
+
+// sphereHits reports whether a sphere touches any part of the hull.
+func (h hull) sphereHits(center vec3, radius float64) bool {
+	for _, box := range h.boxes {
+		if box.distance(center) <= radius {
+			return true
+		}
+	}
+	return false
+}
+
 func (h hull) segmentHits(a, b vec3, tolerance float64) bool {
 	for _, box := range h.boxes {
 		if box.segmentHits(a, b, tolerance) {

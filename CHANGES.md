@@ -28,6 +28,14 @@ for all at `/ws` is unchanged.
   `AssaultRules`, sent to the players with each round.
 - `/status` also counts the players in the assault mode.
 
+Crashes, in both modes: a new client message, `crash {with}`, reports that
+our ship ran into ship `with` (or `"mothership"` in the assault). The server
+destroys both ships if its own record of their positions puts their hit
+spheres within reach of each other (allowing for latency, as for hits), or
+the attacker if it is at the mothership's hull. Gunners never crash, the
+mothership takes no damage from one, and nobody gets a kill: `died` comes
+with an empty `from`.
+
 Version 0.5.0 - 2026-10-19
 ------------------
 Messages for players in Spanish and Basque (Euskara), as well as English.

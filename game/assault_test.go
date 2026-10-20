@@ -238,6 +238,36 @@ func TestGunnersShootDownAttackers(t *testing.T) {
 	}
 }
 
+func TestCrashes(t *testing.T) {
+	s := newArenaServer(t, nil)
+	clients, starts := s.startRound(t, 5)
+	gunner, a, b, c := clients[0], clients[1], clients[2], clients[3]
+	gunnerId, bId := starts[0]["id"].(string), starts[2]["id"].(string)
+
+	// Into the mothership: only when the server agrees we're at its hull.
+	a.place([3]float64{0, 0, -400})
+	a.send(map[string]any{"type": msgCrash, "with": mothershipTarget})
+	c.expectNone(msgDied)
+	a.place([3]float64{0, 0, -120})
+	a.send(map[string]any{"type": msgCrash, "with": mothershipTarget})
+	if died := c.expect(msgDied); died["target"] != starts[1]["id"] {
+		t.Fatalf("died: %v", died)
+	}
+
+	gunner.expect(msgDied)
+
+	// Gunners don't crash.
+	b.send(map[string]any{"type": msgCrash, "with": gunnerId})
+	gunner.expectNone(msgDied)
+
+	// Two attackers.
+	b.place([3]float64{500, 0, 0})
+	c.place([3]float64{500, 0, 6})
+	c.send(map[string]any{"type": msgCrash, "with": bId})
+	gunner.expect(msgDied)
+	gunner.expect(msgDied)
+}
+
 func TestMothershipHoldingOutWinsForTheGunners(t *testing.T) {
 	s := newArenaServer(t, nil)
 	clients, _ := s.startRound(t, 4)

@@ -210,6 +210,11 @@ func (a *Arena) handleMessage(id string, c *client, identity Identity, data []by
 		}
 	case msgRespawn:
 		a.respawn(id)
+	case msgCrash:
+		var msg crashMsg
+		if json.Unmarshal(data, &msg) == nil {
+			a.crash(id, msg)
+		}
 	}
 }
 
@@ -539,6 +544,38 @@ func (a *Arena) hit(id string, msg hitMsg) {
 	target.deaths++
 	shooter.kills++
 	broadcast(r, diedMsg{Type: msgDied, Target: target.id, From: id}, "")
+}
+
+// crash destroys an attacker that flew into the mothership, or two attackers
+// that ran into each other, when the server's record of where they were
+// agrees. The mothership takes no damage from it, and nobody gets a kill.
+func (a *Arena) crash(id string, msg crashMsg) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	p, r := a.playing(id)
+	if p == nil || p.dead || p.team != TeamAttackers {
+		return
+	}
+	victims := []*Player{p}
+	if msg.With == mothershipTarget {
+		if !a.hull.sphereHits(p.pos, a.settings.ShipRadius+hitTolerance) {
+			return
+		}
+	} else {
+		other, ok := r.players[msg.With]
+		if !ok || other == p || other.dead || other.team != TeamAttackers ||
+			!shipsTouch(p.pos, other.pos, a.settings.ShipRadius) {
+			return
+		}
+		victims = append(victims, other)
+	}
+	for _, ship := range victims {
+		ship.life = 0
+		ship.dead = true
+		ship.diedAt = a.now()
+		ship.deaths++
+		broadcast(r, diedMsg{Type: msgDied, Target: ship.id}, "")
+	}
 }
 
 func (a *Arena) respawn(id string) {

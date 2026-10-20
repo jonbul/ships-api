@@ -10,6 +10,8 @@ package game
 //   fire     {id, p, d}          a bullet fired from p along unit vector d
 //   hit      {bulletId, target}  one of our bullets hit `target`
 //   respawn  {}                  after death, once respawnDelayMs has passed
+//   crash    {with}              our ship ran into ship `with` (or, in the
+//                                assault, "mothership"): see crashed below
 //
 // Server -> client:
 //   welcome      {id, settings, players}  answer to join; players includes us
@@ -28,6 +30,7 @@ const (
 	msgFire    = "fire"
 	msgHit     = "hit"
 	msgRespawn = "respawn"
+	msgCrash   = "crash"
 
 	msgWelcome      = "welcome"
 	msgPlayerJoined = "playerJoined"
@@ -58,6 +61,10 @@ type fireMsg struct {
 	Id string `json:"id"`
 	P  vec3   `json:"p"`
 	D  vec3   `json:"d"`
+}
+
+type crashMsg struct {
+	With string `json:"with"`
 }
 
 type hitMsg struct {
