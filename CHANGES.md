@@ -1,5 +1,15 @@
 CHANGES
 =======
+Version 0.7.0 - 2026-10-20
+------------------
+Ship designs accept lights and see-through parts, for ships-vue-3d 0.7.0.
+
+- A new part type, `light`, with an `intensity` from 0.1 to 10. Its `color`
+  is the light's color. A project can have at most 8 lights, a mirrored one
+  counting twice. Other parts' `intensity` is dropped on save.
+- Every part may have an `opacity` from 0.05 to 1; left out, it is opaque as
+  before.
+
 Version 0.6.0 - 2026-10-19
 ------------------
 A new game mode, the assault, on its own websocket: `/ws/assault`. The free

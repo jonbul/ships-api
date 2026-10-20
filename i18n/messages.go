@@ -138,6 +138,11 @@ var catalog = map[string]map[Lang]string{
 		Es: "un proyecto no puede tener más de %d piezas",
 		Eu: "proiektu batek ezin ditu %d pieza baino gehiago izan",
 	},
+	"tooManyLights": {
+		En: "a project can't have more than %d lights (a mirrored light counts twice)",
+		Es: "un proyecto no puede tener más de %d luces (una luz con simetría cuenta doble)",
+		Eu: "proiektu batek ezin ditu %d argi baino gehiago izan (simetriadun argi batek bi aldiz zenbatzen du)",
+	},
 	"unknownPartType": {
 		En: "unknown part type %q",
 		Es: "tipo de pieza desconocido %q",
@@ -177,6 +182,16 @@ var catalog = map[string]map[Lang]string{
 		En: "scale must be between %g and %g",
 		Es: "el tamaño debe estar entre %g y %g",
 		Eu: "tamainak %g eta %g artean egon behar du",
+	},
+	"intensityRange": {
+		En: "light intensity must be between %g and %g",
+		Es: "la intensidad de la luz debe estar entre %g y %g",
+		Eu: "argiaren intentsitateak %g eta %g artean egon behar du",
+	},
+	"opacityRange": {
+		En: "opacity must be between %g%% and 100%%",
+		Es: "la opacidad debe estar entre el %g%% y el 100%%",
+		Eu: "opakutasunak %%%g eta %%100 artean egon behar du",
 	},
 
 	// Game
