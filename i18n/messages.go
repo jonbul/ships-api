@@ -179,6 +179,69 @@ var catalog = map[string]map[Lang]string{
 		Eu: "tamainak %g eta %g artean egon behar du",
 	},
 
+	"invalidModelId": {
+		En: "a 3D model part needs a valid model",
+		Es: "una pieza de modelo 3D necesita un modelo válido",
+		Eu: "3D eredu pieza batek baliozko eredu bat behar du",
+	},
+	"modelNoTexture": {
+		En: "a 3D model keeps its own look and can't have a texture or an image",
+		Es: "un modelo 3D conserva su propio aspecto y no puede tener textura ni imagen",
+		Eu: "3D eredu batek bere itxura gordetzen du eta ezin du testurarik edo irudirik izan",
+	},
+	"modelIdOnShape": {
+		En: "only 3D model parts can have a model",
+		Es: "solo las piezas de modelo 3D pueden tener un modelo",
+		Eu: "3D eredu piezek bakarrik izan dezakete eredu bat",
+	},
+
+	// 3D models
+	"invalidModel": {
+		En: "the file is not a valid .glb model",
+		Es: "el archivo no es un modelo .glb válido",
+		Eu: "fitxategia ez da baliozko .glb eredu bat",
+	},
+	"modelTooLarge": {
+		En: "the model can't be larger than %d MB",
+		Es: "el modelo no puede ocupar más de %d MB",
+		Eu: "ereduak ezin ditu %d MB baino gehiago izan",
+	},
+	"modelTooManyTriangles": {
+		En: "the model can't have more than %d triangles",
+		Es: "el modelo no puede tener más de %d triángulos",
+		Eu: "ereduak ezin ditu %d triangelu baino gehiago izan",
+	},
+	"modelEmpty": {
+		En: "the model has no meshes",
+		Es: "el modelo no tiene mallas",
+		Eu: "ereduak ez du sarerik",
+	},
+	"modelExternalFile": {
+		En: "the model uses files outside the .glb: export it with everything embedded",
+		Es: "el modelo usa archivos fuera del .glb: expórtalo con todo incrustado",
+		Eu: "ereduak .glb-tik kanpoko fitxategiak erabiltzen ditu: esportatu dena barruan duela",
+	},
+	"modelUnsupported": {
+		En: "the model needs %q, which the game doesn't support: export it without compression",
+		Es: "el modelo necesita %q, que el juego no admite: expórtalo sin compresión",
+		Eu: "ereduak %q behar du, eta jokoak ez du onartzen: esportatu konpresiorik gabe",
+	},
+	"tooManyModels": {
+		En: "you can't import more than %d models",
+		Es: "no puedes importar más de %d modelos",
+		Eu: "ezin dituzu %d eredu baino gehiago inportatu",
+	},
+	"saveModelFailed": {
+		En: "could not save the model",
+		Es: "no se ha podido guardar el modelo",
+		Eu: "ezin izan da eredua gorde",
+	},
+	"modelNotFound": {
+		En: "model not found",
+		Es: "no se ha encontrado el modelo",
+		Eu: "ez da eredua aurkitu",
+	},
+
 	// Game
 	"shipNotAllowed": {
 		En: "that ship is not available",

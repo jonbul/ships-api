@@ -1,5 +1,21 @@
 CHANGES
 =======
+Version 0.8.0 - 2026-10-20
+------------------
+Imported 3D models as ship parts. Needs ships-vue-3d 0.8.0.
+
+- `POST /models?name=<file name>` stores a `.glb` file sent as the request
+  body, for the logged-in user, and answers with its id. Importing the same
+  file again returns the first one. `GET /models/:id` serves it to anyone
+  (every player loads the models of the ships they see), cached for good
+  since a model never changes.
+- Models must be binary glTF 2.0, at most 4 MB and 100,000 triangles, with
+  everything embedded (no links to other files) and no Draco, meshopt or
+  Basis compression, which the game can't decode. Up to 100 models per user.
+  They are kept in a new `models3d` collection.
+- A new part type, `model`, with a `modelId` naming the model it shows. A
+  model keeps its own look, so it has no texture or image.
+
 Version 0.6.0 - 2026-10-19
 ------------------
 A new game mode, the assault, on its own websocket: `/ws/assault`. The free

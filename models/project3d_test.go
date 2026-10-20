@@ -130,3 +130,29 @@ func TestBoundingRadiusIgnoresHiddenLayers(t *testing.T) {
 		t.Errorf("a ship with nothing visible has radius %v, want 0", r)
 	}
 }
+
+func TestValidateModelParts(t *testing.T) {
+	p := validProject()
+	part := &p.Layers[0].Parts[0]
+	part.Type = PartModel
+	part.ModelId = "64b7f0c2a1b2c3d4e5f60718"
+	if err := p.Validate(); err != nil {
+		t.Fatalf("model part rejected: %v", err)
+	}
+	for name, change := range map[string]func(*Part){
+		"no model":      func(part *Part) { part.ModelId = "" },
+		"bad model id":  func(part *Part) { part.ModelId = "nope" },
+		"texture":       func(part *Part) { part.Texture = "panels" },
+		"image":         func(part *Part) { part.TextureURL = "https://example.com/a.png" },
+		"shape + model": func(part *Part) { part.Type = PartBox },
+	} {
+		p := validProject()
+		part := &p.Layers[0].Parts[0]
+		part.Type = PartModel
+		part.ModelId = "64b7f0c2a1b2c3d4e5f60718"
+		change(part)
+		if err := p.Validate(); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+}

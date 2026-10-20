@@ -33,6 +33,10 @@ const (
 	PartTube     = "tube"
 	PartPrism    = "prism"
 	PartFrustum  = "frustum"
+	// PartModel shows an imported 3D model (see Model3d) instead of a
+	// primitive. The client scales the model to fit the unit cube like the
+	// other parts, so BoundingRadius and the hull boxes still bound it.
+	PartModel = "model"
 )
 
 var partTypes = map[string]bool{
@@ -40,6 +44,7 @@ var partTypes = map[string]bool{
 	PartCone: true, PartWedge: true, PartTorus: true,
 	PartDome: true, PartCapsule: true, PartPyramid: true,
 	PartTube: true, PartPrism: true, PartFrustum: true,
+	PartModel: true,
 }
 
 // Part textures, also mirrored in shipModel.ts. A part without one ("") is
@@ -80,6 +85,10 @@ type Part struct {
 	// one (never both). Every player's browser loads it, so only https links
 	// of bounded length are accepted.
 	TextureURL string `json:"textureUrl,omitempty" bson:"textureUrl,omitempty"`
+	// ModelId is the Model3d a part of type PartModel shows, and is empty on
+	// every other part. A model keeps its own materials, so such a part has
+	// no texture.
+	ModelId string `json:"modelId,omitempty" bson:"modelId,omitempty"`
 	// Mirror also renders the part reflected across the ship's X=0 plane,
 	// so a symmetric ship only needs one side designed.
 	Mirror bool `json:"mirror" bson:"mirror"`
@@ -153,6 +162,16 @@ func (part *Part) validate() error {
 	}
 	if part.Texture != "" && !partTextures[part.Texture] {
 		return i18n.New("unknownTexture", part.Texture)
+	}
+	if part.Type == PartModel {
+		if _, err := bson.ObjectIDFromHex(part.ModelId); err != nil {
+			return i18n.New("invalidModelId")
+		}
+		if part.Texture != "" || part.TextureURL != "" {
+			return i18n.New("modelNoTexture")
+		}
+	} else if part.ModelId != "" {
+		return i18n.New("modelIdOnShape")
 	}
 	if part.TextureURL != "" {
 		if part.Texture != "" {
