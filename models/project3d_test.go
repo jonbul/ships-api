@@ -29,9 +29,11 @@ func TestValidateAcceptsEveryPartType(t *testing.T) {
 	for _, partType := range []string{
 		PartBox, PartSphere, PartCylinder, PartCone, PartWedge, PartTorus,
 		PartDome, PartCapsule, PartPyramid, PartTube, PartPrism, PartFrustum,
+		PartLight,
 	} {
 		p := validProject()
 		p.Layers[0].Parts[0].Type = partType
+		p.Layers[0].Parts[0].Intensity = 2
 		if err := p.Validate(); err != nil {
 			t.Errorf("%s rejected: %v", partType, err)
 		}
@@ -128,5 +130,80 @@ func TestBoundingRadiusIgnoresHiddenLayers(t *testing.T) {
 	p.Layers[1].Visible = false
 	if r := p.BoundingRadius(); r != 0 {
 		t.Errorf("a ship with nothing visible has radius %v, want 0", r)
+	}
+}
+
+func TestValidateModelParts(t *testing.T) {
+	p := validProject()
+	part := &p.Layers[0].Parts[0]
+	part.Type = PartModel
+	part.ModelId = "64b7f0c2a1b2c3d4e5f60718"
+	if err := p.Validate(); err != nil {
+		t.Fatalf("model part rejected: %v", err)
+	}
+	for name, change := range map[string]func(*Part){
+		"no model":      func(part *Part) { part.ModelId = "" },
+		"bad model id":  func(part *Part) { part.ModelId = "nope" },
+		"texture":       func(part *Part) { part.Texture = "panels" },
+		"image":         func(part *Part) { part.TextureURL = "https://example.com/a.png" },
+		"shape + model": func(part *Part) { part.Type = PartBox },
+	} {
+		p := validProject()
+		part := &p.Layers[0].Parts[0]
+		part.Type = PartModel
+		part.ModelId = "64b7f0c2a1b2c3d4e5f60718"
+		change(part)
+		if err := p.Validate(); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+}
+
+func TestValidateOpacity(t *testing.T) {
+	for opacity, ok := range map[float64]bool{0: true, 0.05: true, 0.5: true, 1: true, 0.01: false, 1.5: false, math.NaN(): false} {
+		p := validProject()
+		p.Layers[0].Parts[0].Opacity = opacity
+		if err := p.Validate(); (err == nil) != ok {
+			t.Errorf("opacity %g: err = %v", opacity, err)
+		}
+	}
+}
+
+func TestValidateLights(t *testing.T) {
+	light := Part{Type: PartLight, Scale: Vec3{0.4, 0.4, 0.4}, Color: "#fff1c4", Intensity: 2}
+	for intensity, ok := range map[float64]bool{0.1: true, 10: true, 0: false, 11: false, math.Inf(1): false} {
+		p := validProject()
+		part := light
+		part.Intensity = intensity
+		p.Layers[0].Parts = append(p.Layers[0].Parts, part)
+		if err := p.Validate(); (err == nil) != ok {
+			t.Errorf("intensity %g: err = %v", intensity, err)
+		}
+	}
+
+	// A mirrored light counts twice.
+	p := validProject()
+	mirrored := light
+	mirrored.Mirror = true
+	for i := 0; i < MaxLights/2; i++ {
+		p.Layers[0].Parts = append(p.Layers[0].Parts, mirrored)
+	}
+	if err := p.Validate(); err != nil {
+		t.Fatalf("%d lights rejected: %v", MaxLights, err)
+	}
+	p.Layers[0].Parts = append(p.Layers[0].Parts, light)
+	if err := p.Validate(); err == nil || !strings.Contains(err.Error(), "lights") {
+		t.Errorf("too many lights accepted: %v", err)
+	}
+}
+
+func TestValidateDropsIntensityOffLights(t *testing.T) {
+	p := validProject()
+	p.Layers[0].Parts[0].Intensity = 3
+	if err := p.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if p.Layers[0].Parts[0].Intensity != 0 {
+		t.Errorf("box kept intensity %g", p.Layers[0].Parts[0].Intensity)
 	}
 }
