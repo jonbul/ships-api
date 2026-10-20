@@ -37,6 +37,10 @@ const (
 	// primitive. The client scales the model to fit the unit cube like the
 	// other parts, so BoundingRadius and the hull boxes still bound it.
 	PartModel = "model"
+	// PartLight is a light: placed like any other part, drawn as a glowing
+	// bulb and shining its Color with its Intensity. It has no texture and is
+	// never see-through.
+	PartLight = "light"
 )
 
 var partTypes = map[string]bool{
@@ -45,6 +49,7 @@ var partTypes = map[string]bool{
 	PartDome: true, PartCapsule: true, PartPyramid: true,
 	PartTube: true, PartPrism: true, PartFrustum: true,
 	PartModel: true,
+	PartLight: true,
 }
 
 // Part textures, also mirrored in shipModel.ts. A part without one ("") is
@@ -67,6 +72,12 @@ const (
 	MinScale             = 0.01
 	MaxScale             = 50.0
 	MaxTextureURLLength  = 500
+	// MaxLights bounds the lights in a ship, a mirrored one counting twice:
+	// every light makes every lit surface dearer to draw.
+	MaxLights    = 8
+	MinIntensity = 0.1
+	MaxIntensity = 10.0
+	MinOpacity   = 0.05
 )
 
 type Vec3 [3]float64
@@ -89,6 +100,12 @@ type Part struct {
 	// every other part. A model keeps its own materials, so such a part has
 	// no texture.
 	ModelId string `json:"modelId,omitempty" bson:"modelId,omitempty"`
+	// Opacity is how see-through the part is, from MinOpacity to 1. Zero
+	// (left out) is opaque, as in ships saved before opacity existed.
+	Opacity float64 `json:"opacity,omitempty" bson:"opacity,omitempty"`
+	// Intensity is a light's brightness, MinIntensity to MaxIntensity. Only
+	// lights have one.
+	Intensity float64 `json:"intensity,omitempty" bson:"intensity,omitempty"`
 	// Mirror also renders the part reflected across the ship's X=0 plane,
 	// so a symmetric ship only needs one side designed.
 	Mirror bool `json:"mirror" bson:"mirror"`
@@ -130,7 +147,7 @@ func (p *Project3d) Validate() error {
 	if len(p.Layers) > MaxLayers {
 		return i18n.New("tooManyLayers", MaxLayers)
 	}
-	parts := 0
+	parts, lights := 0, 0
 	for i := range p.Layers {
 		layer := &p.Layers[i]
 		layer.Name = strings.TrimSpace(layer.Name)
@@ -146,9 +163,20 @@ func (p *Project3d) Validate() error {
 			}
 		}
 		parts += len(layer.Parts)
+		for _, part := range layer.Parts {
+			if part.Type == PartLight {
+				lights++
+				if part.Mirror {
+					lights++
+				}
+			}
+		}
 	}
 	if parts > MaxParts {
 		return i18n.New("tooManyParts", MaxParts)
+	}
+	if lights > MaxLights {
+		return i18n.New("tooManyLights", MaxLights)
 	}
 	return nil
 }
@@ -180,6 +208,17 @@ func (part *Part) validate() error {
 		if !validTextureURL(part.TextureURL) {
 			return i18n.New("imageLinkRule", MaxTextureURLLength)
 		}
+	}
+	if part.Opacity != 0 && (!isFinite(part.Opacity) || part.Opacity < MinOpacity || part.Opacity > 1) {
+		return i18n.New("opacityRange", MinOpacity*100)
+	}
+	if part.Type == PartLight {
+		if !isFinite(part.Intensity) || part.Intensity < MinIntensity || part.Intensity > MaxIntensity {
+			return i18n.New("intensityRange", MinIntensity, MaxIntensity)
+		}
+	} else {
+		// Meaningless on anything but a light: dropped rather than refused.
+		part.Intensity = 0
 	}
 	for axis := 0; axis < 3; axis++ {
 		if !isFinite(part.Position[axis]) || math.Abs(part.Position[axis]) > MaxCoordinate {
