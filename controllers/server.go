@@ -16,7 +16,8 @@ import (
 )
 
 // maxBodyBytes caps a request body. The largest legitimate one is a project
-// at its part limit, which is well under this.
+// at its part limit, which is well under this. Model uploads have a cap of
+// their own (maxModelBodyBytes).
 const maxBodyBytes = 1 << 20
 
 type Server struct {
@@ -53,7 +54,11 @@ func (s *Server) Router() *gin.Engine {
 	}
 	router.Use(cors.New(corsConfig))
 	router.Use(func(c *gin.Context) {
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBodyBytes)
+		limit := int64(maxBodyBytes)
+		if c.Request.Method == http.MethodPost && c.FullPath() == "/models" {
+			limit = maxModelBodyBytes
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 		c.Next()
 	})
 
@@ -62,6 +67,7 @@ func (s *Server) Router() *gin.Engine {
 	})
 	s.registerUserRoutes(router)
 	s.registerProjectRoutes(router)
+	s.registerModelRoutes(router)
 	s.registerGameRoutes(router)
 	return router
 }

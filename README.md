@@ -55,6 +55,8 @@ ships-go reads); `ssl` links to `../files/ssl`. Variables used:
 | POST | `/changePassword` | `{currentPassword, newPassword}`; logs out other sessions |
 | GET/POST | `/projects` | list / create own projects |
 | GET/PUT/DELETE | `/projects/:id` | own projects only; others' are a 404 |
+| POST | `/models?name=` | import a `.glb` model (the request body); answers `{model: {_id, name}}` |
+| GET | `/models/:id` | a model's `.glb` file; public, cached for good |
 | GET | `/game/ships` | `{defaults, own}` ships a player can fly |
 | GET | `/ws` | the game websocket, free for all (protocol in `game/protocol.go`) |
 | GET | `/ws/assault` | the assault mode's websocket: lobbies and team rounds around a mothership (`game/assault.go`) |

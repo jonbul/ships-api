@@ -16,6 +16,7 @@ const (
 	usersCollection    = "users"
 	sessionsCollection = "sessions"
 	projectsCollection = "paintingProjects3d"
+	modelsCollection   = "models3d"
 )
 
 // queryTimeout bounds every database call, so a stalled MongoDB fails a

@@ -33,6 +33,10 @@ const (
 	PartTube     = "tube"
 	PartPrism    = "prism"
 	PartFrustum  = "frustum"
+	// PartModel shows an imported 3D model (see Model3d) instead of a
+	// primitive. The client scales the model to fit the unit cube like the
+	// other parts, so BoundingRadius and the hull boxes still bound it.
+	PartModel = "model"
 	// PartLight is a light: placed like any other part, drawn as a glowing
 	// bulb and shining its Color with its Intensity. It has no texture and is
 	// never see-through.
@@ -44,6 +48,7 @@ var partTypes = map[string]bool{
 	PartCone: true, PartWedge: true, PartTorus: true,
 	PartDome: true, PartCapsule: true, PartPyramid: true,
 	PartTube: true, PartPrism: true, PartFrustum: true,
+	PartModel: true,
 	PartLight: true,
 }
 
@@ -91,6 +96,10 @@ type Part struct {
 	// one (never both). Every player's browser loads it, so only https links
 	// of bounded length are accepted.
 	TextureURL string `json:"textureUrl,omitempty" bson:"textureUrl,omitempty"`
+	// ModelId is the Model3d a part of type PartModel shows, and is empty on
+	// every other part. A model keeps its own materials, so such a part has
+	// no texture.
+	ModelId string `json:"modelId,omitempty" bson:"modelId,omitempty"`
 	// Opacity is how see-through the part is, from MinOpacity to 1. Zero
 	// (left out) is opaque, as in ships saved before opacity existed.
 	Opacity float64 `json:"opacity,omitempty" bson:"opacity,omitempty"`
@@ -181,6 +190,16 @@ func (part *Part) validate() error {
 	}
 	if part.Texture != "" && !partTextures[part.Texture] {
 		return i18n.New("unknownTexture", part.Texture)
+	}
+	if part.Type == PartModel {
+		if _, err := bson.ObjectIDFromHex(part.ModelId); err != nil {
+			return i18n.New("invalidModelId")
+		}
+		if part.Texture != "" || part.TextureURL != "" {
+			return i18n.New("modelNoTexture")
+		}
+	} else if part.ModelId != "" {
+		return i18n.New("modelIdOnShape")
 	}
 	if part.TextureURL != "" {
 		if part.Texture != "" {
